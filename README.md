@@ -2,7 +2,7 @@
 
 面向大一新生的协会宣传页，纯静态 HTML/CSS/JS，无任何外部依赖。
 
-- 线上地址（GitHub Pages）：部署后更新
+- 线上地址（GitHub Pages）：https://cyj880.github.io/ai-club-website/
 - 招新QQ群：551018478
 
 ## 目录结构
