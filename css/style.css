@@ -69,7 +69,12 @@ section { scroll-margin-top: 72px; }
   font-size: 1.15rem;
 }
 
-.brand-logo { width: 32px; height: 32px; border-radius: 8px; }
+.brand-logo {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.18);
+  object-fit: cover;
+}
 
 .nav-links {
   display: flex;
@@ -289,11 +294,11 @@ section { scroll-margin-top: 72px; }
   animation: pulse 3.5s ease-in-out infinite;
 }
 
-.core-badge span {
-  font-size: 1rem;
-  font-weight: 900;
-  letter-spacing: 3px;
-  color: #fff;
+.core-badge img {
+  width: 78px; height: 78px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 @keyframes pulse {
@@ -525,6 +530,14 @@ section { scroll-margin-top: 72px; }
   text-align: center;
   padding: 36px 0;
   font-weight: 600;
+}
+
+.footer-logo {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  margin: 0 auto 14px;
+  object-fit: cover;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.22);
 }
 
 .footer-sub {
