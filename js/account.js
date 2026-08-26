@@ -6,6 +6,7 @@
   var submissions = [];
   var attachments = [];
   var selectedAssignment = null;
+  var submissionBusy = false;
   var MAX_FILES = 5;
   var MAX_TOTAL = 20 * 1024 * 1024;
   var allowedExtensions = ["zip", "pdf", "png", "jpg", "jpeg"];
@@ -73,6 +74,21 @@
     ]);
     submissions = results[0] || [];
     attachments = results[1] || [];
+    try {
+      await removeOlderSubmissions();
+    } catch (_) {
+      // 清理接口暂时不可用时仍只在页面显示最新提交；下次进入时会重试清理。
+      var latest = latestOnly(submissions);
+      var keepIds = new Set(latest.map(function (item) { return item.id; }));
+      submissions = latest;
+      attachments = attachments.filter(function (file) { return keepIds.has(file.submission_id); });
+    }
+    // 课程目录中已删除的旧任务不再出现在当前任务和提交记录中；
+    // 数据库历史记录仍保留，避免更换任务时误删学生文件。
+    var activeAssignmentIds = new Set(allAssignments.map(function (item) { return item.id; }));
+    submissions = submissions.filter(function (item) { return activeAssignmentIds.has(item.assignment_id); });
+    var activeSubmissionIds = new Set(submissions.map(function (item) { return item.id; }));
+    attachments = attachments.filter(function (file) { return activeSubmissionIds.has(file.submission_id); });
     el("authCheckingView").classList.add("hidden");
     el("authView").classList.add("hidden");
     el("dashboardView").classList.remove("hidden");
@@ -91,13 +107,38 @@
     return submissions.filter(function (item) { return item.assignment_id === assignmentId; }).sort(function (a, b) { return b.version - a.version; })[0] || null;
   }
 
+  function latestOnly(items) {
+    var seen = new Set();
+    return items.slice().sort(function (a, b) { return b.version - a.version; }).filter(function (item) {
+      var key = (item.user_id || "") + ":" + item.assignment_id;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  async function removeOlderSubmissions() {
+    if (profile.role !== "student") return;
+    var latest = latestOnly(submissions);
+    var keepIds = new Set(latest.map(function (item) { return item.id; }));
+    var older = submissions.filter(function (item) { return !keepIds.has(item.id); });
+    if (older.length) {
+      var olderIds = new Set(older.map(function (item) { return item.id; }));
+      var olderPaths = attachments.filter(function (file) { return olderIds.has(file.submission_id); }).map(function (file) { return file.storage_path; });
+      await AIClub.removeFiles(olderPaths);
+      await AIClub.rpc("prune_submission_history", { p_assignment_id: null });
+    }
+    submissions = latest;
+    attachments = attachments.filter(function (file) { return keepIds.has(file.submission_id); });
+  }
+
   function renderDashboard() {
     var submitted = allAssignments.filter(function (item) { return !!latestFor(item.id); }).length;
-    el("studentStats").innerHTML = '<div class="portal-card stat"><strong>' + submitted + '</strong><span>已提交任务</span></div><div class="portal-card stat"><strong>' + submissions.length + '</strong><span>全部提交版本</span></div><div class="portal-card stat"><strong>' + allAssignments.length + '</strong><span>全部任务</span></div>';
+    el("studentStats").innerHTML = '<div class="portal-card stat"><strong>' + submitted + '</strong><span>已提交任务</span></div><div class="portal-card stat"><strong>' + submissions.length + '</strong><span>当前提交</span></div><div class="portal-card stat"><strong>' + allAssignments.length + '</strong><span>全部任务</span></div>';
 
     el("taskList").innerHTML = allAssignments.map(function (assignment) {
       var latest = latestFor(assignment.id);
-      return '<article class="portal-card task-card"><div class="split"><div><span class="chip">' + esc(assignment.courseTitle) + '</span><h3>' + esc(assignment.title) + '</h3></div><span class="status ' + (latest ? "submitted" : "unsubmitted") + '">' + (latest ? "已提交" : "未提交") + '</span></div><p class="muted small">' + esc(assignment.description) + '</p>' + (latest ? '<div class="task-meta"><span>最新：第 ' + latest.version + ' 版</span><span>·</span><span>' + formatDate(latest.created_at) + "</span></div>" : '<div class="task-meta"><span>尚未提交</span></div>') + '<div class="cluster" style="margin-top:14px"><button class="btn btn-primary" type="button" data-submit-assignment="' + esc(assignment.id) + '">' + (latest ? "提交新版本" : "提交作业") + '</button><a class="text-button" href="learn.html?course=' + encodeURIComponent(assignment.courseId) + '&chapter=' + encodeURIComponent(assignment.chapterId) + '">查看章节</a></div></article>';
+      return '<article class="portal-card task-card"><div class="split"><div><span class="chip">' + esc(assignment.courseTitle) + '</span><h3>' + esc(assignment.title) + '</h3></div><span class="status ' + (latest ? "submitted" : "unsubmitted") + '">' + (latest ? "已提交" : "未提交") + '</span></div><p class="muted small">' + esc(assignment.description) + '</p>' + (latest ? '<div class="task-meta"><span>最后提交</span><span>·</span><span>' + formatDate(latest.created_at) + "</span></div>" : '<div class="task-meta"><span>尚未提交</span></div>') + '<div class="cluster" style="margin-top:14px"><button class="btn btn-primary" type="button" data-submit-assignment="' + esc(assignment.id) + '">' + (latest ? "重新提交" : "提交作业") + '</button><a class="text-button" href="learn.html?course=' + encodeURIComponent(assignment.courseId) + '&chapter=' + encodeURIComponent(assignment.chapterId) + '">查看章节</a></div></article>';
     }).join("");
 
     el("submissionList").innerHTML = submissions.length ? submissions.map(renderSubmission).join("") : '<div class="empty">还没有提交记录。</div>';
@@ -108,7 +149,7 @@
   function renderSubmission(item) {
     var assignment = allAssignments.find(function (a) { return a.id === item.assignment_id; });
     var files = attachments.filter(function (file) { return file.submission_id === item.id; });
-    return '<article class="portal-card submission-card"><div class="split"><div><span class="chip">' + esc(assignment ? assignment.courseTitle : item.course_id) + '</span><h3>' + esc(assignment ? assignment.title : item.assignment_id) + ' · 第 ' + item.version + ' 版</h3></div><span class="status submitted">已提交</span></div><p class="muted small">提交于 ' + formatDate(item.created_at) + '</p>' + (item.description ? '<p style="margin-top:10px;white-space:pre-wrap">' + esc(item.description) + "</p>" : "") + (item.repository_url ? '<p class="small"><a href="' + esc(item.repository_url) + '" target="_blank" rel="noopener noreferrer">查看代码仓库 ↗</a></p>' : "") + renderFiles(files) + "</article>";
+    return '<article class="portal-card submission-card"><div class="split"><div><span class="chip">' + esc(assignment ? assignment.courseTitle : item.course_id) + '</span><h3>' + esc(assignment ? assignment.title : item.assignment_id) + '</h3></div><span class="status submitted">当前提交</span></div><p class="muted small">提交于 ' + formatDate(item.created_at) + '</p>' + (item.description ? '<p style="margin-top:10px;white-space:pre-wrap">' + esc(item.description) + "</p>" : "") + (item.repository_url ? '<p class="small"><a href="' + esc(item.repository_url) + '" target="_blank" rel="noopener noreferrer">查看代码仓库 ↗</a></p>' : "") + renderFiles(files) + "</article>";
   }
 
   function renderFiles(files) {
@@ -117,6 +158,10 @@
   }
 
   function openSubmission(assignment) {
+    // 上一次提交成功后表单曾处于 busy 状态；重新打开时必须恢复所有控件，
+    // 否则“取消”按钮会被遗留为 disabled，看起来像点击无效。
+    submissionBusy = false;
+    setBusy(el("submissionForm"), false);
     selectedAssignment = assignment;
     el("submitModalTitle").textContent = assignment.title;
     el("submitModalDescription").textContent = assignment.description;
@@ -126,7 +171,14 @@
     el("submitModal").classList.remove("hidden");
     document.body.style.overflow = "hidden";
   }
-  function closeSubmission() { el("submitModal").classList.add("hidden"); document.body.style.overflow = ""; selectedAssignment = null; }
+  function closeSubmission() {
+    // 上传尚未完成时不关闭，避免留下未完成的数据库记录和孤立文件。
+    if (submissionBusy) return;
+    setBusy(el("submissionForm"), false);
+    el("submitModal").classList.add("hidden");
+    document.body.style.overflow = "";
+    selectedAssignment = null;
+  }
 
   async function submitHomework(event) {
     event.preventDefault();
@@ -138,7 +190,8 @@
       var validated = validateFiles(el("submissionFiles").files);
       var description = el("submissionDescription").value.trim();
       var repositoryUrl = el("repositoryUrl").value.trim() || null;
-      setBusy(form, true); showMessage(message, "正在创建提交版本…", "");
+      submissionBusy = true;
+      setBusy(form, true); showMessage(message, "正在创建提交记录…", "");
       created = await AIClub.rpc("create_submission", { p_course_id: selectedAssignment.courseId, p_assignment_id: selectedAssignment.id, p_description: description, p_repository_url: repositoryUrl });
       for (var i = 0; i < validated.files.length; i += 1) {
         var original = validated.files[i];
@@ -152,6 +205,7 @@
         await AIClub.rpc("register_attachment", { p_submission_id: created.id, p_storage_path: path, p_original_name: original.name, p_mime_type: file.type, p_size_bytes: file.size });
       }
       await AIClub.rpc("complete_submission", { p_submission_id: created.id });
+      submissionBusy = false;
       showMessage(message, "提交成功，正在刷新记录…", "success");
       setTimeout(function () { closeSubmission(); loadDashboard().catch(showGlobalError); }, 650);
     } catch (err) {
@@ -159,6 +213,7 @@
         try { await AIClub.removeFiles(uploadedPaths); } catch (_) { /* 数据库回滚仍继续 */ }
         try { await AIClub.rpc("discard_submission", { p_submission_id: created.id }); } catch (_) { /* 管理员可清理异常记录 */ }
       }
+      submissionBusy = false;
       showMessage(message, AIClub.friendlyError(err), "error");
       setBusy(form, false);
     }
@@ -179,11 +234,21 @@
   }
 
   document.addEventListener("click", async function (event) {
+    var target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
     var tab = event.target.closest("[data-auth-tab]");
     if (tab) showAuthPanel(tab.dataset.authTab);
     if (event.target.closest("[data-back-login]")) showAuthPanel("login");
-    if (event.target.closest("[data-close-modal]")) closeSubmission();
-    var submit = event.target.closest("[data-submit-assignment]");
+    if (target.closest("[data-close-modal]")) {
+      event.preventDefault();
+      closeSubmission();
+      return;
+    }
+    if (target === el("submitModal") && !submissionBusy) {
+      closeSubmission();
+      return;
+    }
+    var submit = target.closest("[data-submit-assignment]");
     if (submit) {
       var assignment = allAssignments.find(function (item) { return item.id === submit.dataset.submitAssignment; });
       if (assignment) openSubmission(assignment);
@@ -204,6 +269,17 @@
     }
     if (event.target.id === "requestDeletion") requestDeletion(true);
     if (event.target.id === "cancelDeletion") requestDeletion(false);
+  });
+
+  // 直接绑定取消按钮作为委托事件的兜底，兼容部分移动浏览器的点击目标变化。
+  document.querySelectorAll("#submitModal [data-close-modal]").forEach(function (button) {
+    button.addEventListener("click", function (event) {
+      event.preventDefault();
+      closeSubmission();
+    });
+  });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && !el("submitModal").classList.contains("hidden")) closeSubmission();
   });
 
   el("forgotButton").addEventListener("click", function () { el("recoverEmail").value = el("loginEmail").value; showAuthPanel("recover"); });
