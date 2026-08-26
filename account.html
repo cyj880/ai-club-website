@@ -19,7 +19,11 @@
 
   <div class="container"><div id="globalNotice" class="notice setup-banner hidden" role="status"></div></div>
 
-  <main id="authView">
+  <main id="authCheckingView" class="portal-main">
+    <div class="container"><div class="portal-card loading">正在验证登录状态…</div></div>
+  </main>
+
+  <main id="authView" class="hidden">
     <section class="portal-card auth-shell">
       <div class="auth-aside">
         <span class="eyebrow" style="color:#ddd6fe">AI CLUB MEMBER</span>
@@ -43,7 +47,7 @@
         </form>
 
         <form id="registerForm" class="stack hidden">
-          <div><h2>新生注册</h2><p class="muted small">需填写本届邀请码，邮箱验证后方可登录</p></div>
+          <div><h2>新生注册</h2><p class="muted small">填写本届邀请码，注册成功后可直接进入作业中心</p></div>
           <div class="form-grid">
             <div class="field"><label for="regEmail">邮箱</label><input id="regEmail" name="email" type="email" autocomplete="email" maxlength="254" required></div>
             <div class="field"><label for="regName">真实姓名</label><input id="regName" name="fullName" maxlength="50" autocomplete="name" required></div>
@@ -56,7 +60,7 @@
             <label class="check-row field full"><input name="privacyAccepted" type="checkbox" required><span>我已阅读<a href="privacy.html" target="_blank">个人信息说明</a>，同意协会负责人为成员识别、作业批阅和必要联系使用上述信息。</span></label>
           </div>
           <div id="registerMessage" class="notice hidden" role="status"></div>
-          <div class="form-actions"><button class="btn btn-primary btn-lg" type="submit">注册并发送验证邮件</button></div>
+          <div class="form-actions"><button class="btn btn-primary btn-lg" type="submit">注册并进入作业中心</button></div>
         </form>
 
         <form id="recoverForm" class="stack hidden">
