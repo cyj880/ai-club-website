@@ -15,39 +15,79 @@
           "title": "第 1 章：环境与第一段程序",
           "content": "content/c-language/01-start.md",
           "assignment": {
-            "id": "c-01-hello",
-            "title": "C01 · Hello AI Club",
-            "description": "完成开发环境配置，提交能够编译运行的第一个 C 程序和运行截图。"
+            "id": "c-2026-01-hello-world",
+            "title": "C01 · 软件安装与 Hello World",
+            "description": "下载并安装开发软件，运行程序输出“Hello World！”，上传输出结果截图。"
           }
         },
         {
-          "id": "c-02-control",
-          "title": "第 2 章：变量与流程控制",
-          "content": "content/c-language/02-control.md",
+          "id": "c-02-input-arithmetic",
+          "title": "第 2 章：输入、变量与运算",
+          "content": "content/c-language/02-input-arithmetic.md",
           "assignment": {
-            "id": "c-02-menu",
-            "title": "C02 · 控制台菜单",
-            "description": "使用分支与循环实现一个可重复操作的控制台菜单。"
+            "id": "c-2026-02-weighted-grade",
+            "title": "C02 · 三项成绩加权计算",
+            "description": "输入作业、小测和期末考试三项非负整数成绩，按 20%、30%、50% 的权重计算并输出总成绩，上传代码和输出结果截图。"
           }
         },
         {
-          "id": "c-03-function",
-          "title": "第 3 章：函数与数组",
-          "content": "content/c-language/03-function.md",
+          "id": "c-03-condition",
+          "title": "第 3 章：条件判断",
+          "content": "content/c-language/03-condition.md",
           "assignment": {
-            "id": "c-03-stats",
-            "title": "C03 · 数据统计器",
-            "description": "将数据输入、计算和显示拆分为函数，完成一组数据的统计。"
+            "id": "c-2026-03-leap-year",
+            "title": "C03 · 闰年判断",
+            "description": "输入一个年份，按照普通闰年和世纪闰年的规则进行判断；是闰年输出 1，否则输出 0。"
           }
         },
         {
-          "id": "c-04-pointer",
-          "title": "第 4 章：指针与结构体",
-          "content": "content/c-language/04-pointer.md",
+          "id": "c-04-three-number-sort",
+          "title": "第 4 章：三个整数排序",
+          "content": "content/c-language/04-three-number-sort.md",
           "assignment": {
-            "id": "c-04-students",
-            "title": "C04 · 学生信息管理",
-            "description": "使用结构体数组和指针完成简单的信息增查与排序。"
+            "id": "c-2026-04-three-number-sort",
+            "title": "C04 · 三个整数从小到大排序",
+            "description": "给出三个整数 a、b、c（0≤a、b、c≤100），将这三个整数从小到大排序并输出。"
+          }
+        },
+        {
+          "id": "c-05-minimum",
+          "title": "第 5 章：循环与最值",
+          "content": "content/c-language/05-minimum.md",
+          "assignment": {
+            "id": "c-2026-05-six-number-minimum",
+            "title": "C05 · 六个整数的最小值",
+            "description": "给出 6 个整数，求并输出这 6 个整数中的最小值。"
+          }
+        },
+        {
+          "id": "c-06-array-ranking",
+          "title": "第 6 章：数组与成绩排名",
+          "content": "content/c-language/06-array-ranking.md",
+          "assignment": {
+            "id": "c-2026-06-student-ranking",
+            "title": "C06 · 三名同学成绩排名",
+            "description": "使用数组录入甲、乙、丙三名同学的语文、数学和英语成绩并排名：先比较总分，总分相同依次比较语文、数学、英语成绩。"
+          }
+        },
+        {
+          "id": "c-07-pointer-array",
+          "title": "第 7 章：指针与数组",
+          "content": "content/c-language/07-pointer-array.md",
+          "assignment": {
+            "id": "c-2026-07-pointer-swap",
+            "title": "C07 · 指针遍历与极值交换",
+            "description": "定义包含 5 个整数的数组，使用指针遍历并打印；用指针找到最大值和最小值，交换二者位置后再次遍历并打印。"
+          }
+        },
+        {
+          "id": "c-08-struct-book",
+          "title": "第 8 章：结构体",
+          "content": "content/c-language/08-struct-book.md",
+          "assignment": {
+            "id": "c-2026-08-book-struct",
+            "title": "C08 · Book 结构体与价格比较",
+            "description": "定义包含书名和价格的 Book 结构体，创建并输出 2 本图书的信息，比较价格并输出哪本书更贵。"
           }
         }
       ]
