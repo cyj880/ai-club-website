@@ -14,6 +14,9 @@ create table if not exists public.profiles (
   qq text not null check (qq ~ '^[1-9][0-9]{4,11}$'),
   cohort_label text not null check (char_length(cohort_label) between 1 and 40),
   role text not null default 'student' check (role in ('student', 'admin')),
+  -- 飞书多维表格中的记录 ID。它不是学号，也不会显示给新生或写入飞书字段，
+  -- 只用于让同一个网站账号始终更新同一行。
+  feishu_record_id text,
   deletion_requested_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -47,6 +50,10 @@ create table if not exists public.submissions (
 
 create index if not exists submissions_user_assignment_idx on public.submissions (user_id, assignment_id, version desc);
 create index if not exists submissions_created_idx on public.submissions (created_at desc);
+
+create unique index if not exists profiles_feishu_record_id_key
+  on public.profiles (feishu_record_id)
+  where feishu_record_id is not null;
 
 create table if not exists public.attachments (
   id uuid primary key default gen_random_uuid(),
@@ -184,7 +191,7 @@ revoke all on function public.admin_set_invite_active(uuid, boolean) from public
 grant execute on function public.admin_create_invite(text, text) to authenticated;
 grant execute on function public.admin_set_invite_active(uuid, boolean) to authenticated;
 
--- ---------- 作业版本和附件 ----------
+-- ---------- 作业提交和附件（每个任务只保留最新一次） ----------
 create or replace function public.create_submission(
   p_course_id text,
   p_assignment_id text,
@@ -306,6 +313,71 @@ grant execute on function public.create_submission(text, text, text, text) to au
 grant execute on function public.register_attachment(uuid, text, text, text, bigint) to authenticated;
 grant execute on function public.complete_submission(uuid) to authenticated;
 grant execute on function public.discard_submission(uuid) to authenticated;
+
+-- 清理同一学生同一任务的旧提交。文件先由前端通过 Storage API 删除，
+-- 再调用此函数删除数据库记录，避免留下无法下载的历史记录。
+create or replace function public.prune_submission_history(p_assignment_id text default null)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare v_deleted integer;
+begin
+  if auth.uid() is null then raise exception 'authentication required'; end if;
+  if p_assignment_id is not null and p_assignment_id !~ '^[a-z0-9][a-z0-9-]{1,63}$' then
+    raise exception 'invalid assignment id';
+  end if;
+  with ranked as (
+    select id,
+      row_number() over (
+        partition by assignment_id
+        order by version desc, created_at desc, id desc
+      ) as rn
+    from public.submissions
+    where user_id = auth.uid()
+      and is_complete
+      and (p_assignment_id is null or assignment_id = p_assignment_id)
+  )
+  delete from public.submissions s
+  using ranked r
+  where s.id = r.id and r.rn > 1;
+  get diagnostics v_deleted = row_count;
+  return v_deleted;
+end;
+$$;
+
+revoke all on function public.prune_submission_history(text) from public;
+grant execute on function public.prune_submission_history(text) to authenticated;
+
+create or replace function public.admin_prune_submission_history()
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare v_deleted integer;
+begin
+  if not public.is_admin(auth.uid()) then raise exception 'administrator access required'; end if;
+  with ranked as (
+    select id,
+      row_number() over (
+        partition by user_id, assignment_id
+        order by version desc, created_at desc, id desc
+      ) as rn
+    from public.submissions
+    where is_complete
+  )
+  delete from public.submissions s
+  using ranked r
+  where s.id = r.id and r.rn > 1;
+  get diagnostics v_deleted = row_count;
+  return v_deleted;
+end;
+$$;
+
+revoke all on function public.admin_prune_submission_history() from public;
+grant execute on function public.admin_prune_submission_history() to authenticated;
 grant execute on function public.set_deletion_request(boolean) to authenticated;
 
 -- ---------- 数据库行级权限 ----------
@@ -336,6 +408,113 @@ using (
 
 revoke all on public.profiles, public.invitation_codes, public.submissions, public.attachments from anon, authenticated;
 grant select on public.profiles, public.invitation_codes, public.submissions, public.attachments to authenticated;
+
+-- 后端 Edge Function 使用 Secret key 映射为 service_role。只授予飞书同步
+-- 所需的读取权限与内部记录 ID 更新权限，不向浏览器账号扩权。
+grant select on public.profiles, public.submissions to service_role;
+grant update (feishu_record_id) on public.profiles to service_role;
+
+-- 飞书同步后端 RPC。调用必须提供只保存在 Vault 中的同步密钥，避免 Edge
+-- Function 依赖 PostgREST 对 profiles 表的直接角色授权。
+create or replace function public.feishu_sync_check_secret(p_sync_secret text)
+returns void
+language plpgsql
+security definer
+set search_path = public, vault
+as $$
+begin
+  if p_sync_secret is null or not exists (
+    select 1 from vault.decrypted_secrets
+    where name = 'feishu_sync_webhook_secret'
+      and decrypted_secret = p_sync_secret
+  ) then
+    raise exception 'invalid sync secret';
+  end if;
+end;
+$$;
+
+create or replace function public.feishu_get_profile(
+  p_user_id uuid,
+  p_sync_secret text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, vault
+as $$
+declare v_profile jsonb;
+begin
+  perform public.feishu_sync_check_secret(p_sync_secret);
+  select jsonb_build_object(
+    'id', id,
+    'full_name', full_name,
+    'role', role,
+    'feishu_record_id', feishu_record_id
+  ) into v_profile
+  from public.profiles
+  where id = p_user_id;
+  return v_profile;
+end;
+$$;
+
+create or replace function public.feishu_set_record_id(
+  p_user_id uuid,
+  p_record_id text,
+  p_sync_secret text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public, vault
+as $$
+begin
+  perform public.feishu_sync_check_secret(p_sync_secret);
+  if p_record_id is null or char_length(p_record_id) > 200 then
+    raise exception 'invalid Feishu record id';
+  end if;
+  update public.profiles
+  set feishu_record_id = p_record_id, updated_at = now()
+  where id = p_user_id and role = 'student';
+end;
+$$;
+
+create or replace function public.feishu_backfill(p_sync_secret text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, vault
+as $$
+begin
+  perform public.feishu_sync_check_secret(p_sync_secret);
+  return jsonb_build_object(
+    'profiles', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'id', id,
+        'full_name', full_name,
+        'role', role,
+        'feishu_record_id', feishu_record_id
+      ) order by created_at)
+      from public.profiles where role = 'student'
+    ), '[]'::jsonb),
+    'submissions', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'user_id', user_id,
+        'assignment_id', assignment_id
+      ) order by created_at)
+      from public.submissions where is_complete = true
+    ), '[]'::jsonb)
+  );
+end;
+$$;
+
+revoke all on function public.feishu_sync_check_secret(text) from public;
+revoke all on function public.feishu_get_profile(uuid, text) from public;
+revoke all on function public.feishu_set_record_id(uuid, text, text) from public;
+revoke all on function public.feishu_backfill(text) from public;
+grant execute on function public.feishu_sync_check_secret(text) to anon, authenticated, service_role;
+grant execute on function public.feishu_get_profile(uuid, text) to anon, authenticated, service_role;
+grant execute on function public.feishu_set_record_id(uuid, text, text) to anon, authenticated, service_role;
+grant execute on function public.feishu_backfill(text) to anon, authenticated, service_role;
 
 -- ---------- 私有作业存储 ----------
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
