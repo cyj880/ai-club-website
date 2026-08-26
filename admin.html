@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>负责人后台 · 人工智能协会</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" href="assets/favicon.png" type="image/png"><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/portal.css">
+</head>
+<body class="portal-page">
+  <header class="portal-nav"><div class="container portal-nav-inner"><a class="brand" href="index.html"><img class="brand-logo" src="assets/logo.jpg" alt="人工智能协会会徽"><span class="brand-name">负责人后台</span></a><nav class="portal-nav-actions"><a href="learn.html">学习中心</a><a href="account.html">学生中心</a><a class="active" href="admin.html">管理后台</a><button id="adminSignOut" class="text-button" type="button">退出</button></nav></div></header>
+  <main class="portal-main"><div class="container">
+    <div id="adminNotice" class="notice hidden" role="status"></div>
+    <div id="adminLoading" class="portal-card loading">正在验证管理员身份…</div>
+    <div id="adminApp" class="hidden">
+      <div class="dashboard-head"><span class="eyebrow">ADMIN CONSOLE</span><h1>新生作答情况</h1><p class="muted">仅查看提交情况与附件，不包含批改、评分或反馈功能。</p></div>
+      <div class="stat-grid" id="adminStats"></div>
+      <div class="dashboard-layout" style="margin-top:26px">
+        <nav class="portal-card dashboard-menu" id="adminMenu">
+          <button class="active" type="button" data-admin-panel="submissions">📦 作业提交</button>
+          <button type="button" data-admin-panel="students">👥 新生名单</button>
+          <button type="button" data-admin-panel="invites">🔑 届别邀请码</button>
+          <button type="button" data-admin-panel="deletions">🗑 删除申请</button>
+        </nav>
+        <div>
+          <section id="submissionsPanel" data-admin-content>
+            <div class="portal-card admin-toolbar">
+              <div class="field"><label for="filterCohort">届别</label><select id="filterCohort"><option value="">全部届别</option></select></div>
+              <div class="field"><label for="filterCourse">课程</label><select id="filterCourse"><option value="">全部课程</option></select></div>
+              <div class="field"><label for="filterAssignment">任务</label><select id="filterAssignment"><option value="">全部任务</option></select></div>
+              <div class="field"><label for="filterStudent">学生</label><input id="filterStudent" type="search" placeholder="姓名 / 学号 / 班级"></div>
+              <div class="field"><label>&nbsp;</label><button id="resetFilters" class="btn btn-outline" type="button">清空筛选</button></div>
+            </div>
+            <div id="adminSubmissionList" class="admin-list"></div>
+          </section>
+          <section id="studentsPanel" data-admin-content class="portal-card portal-card-pad hidden"><div class="split"><div><h2>新生名单</h2><p class="muted small">按注册时间排序，并汇总提交任务数</p></div></div><div id="studentList" class="admin-list" style="margin-top:20px"></div></section>
+          <section id="invitesPanel" data-admin-content class="stack hidden">
+            <form id="inviteForm" class="portal-card portal-card-pad stack"><div><h2>设置届别邀请码</h2><p class="muted small">同一届新设置邀请码时，旧邀请码会自动停用；邀请码本身不会保存到数据库。</p></div><div class="form-grid"><div class="field"><label for="inviteCohort">届别名称</label><input id="inviteCohort" name="cohortLabel" maxlength="40" placeholder="如：2026 级" required></div><div class="field"><label for="inviteCode">新邀请码</label><input id="inviteCode" name="code" type="password" minlength="10" maxlength="64" autocomplete="new-password" required><span class="field-help">建议至少 12 位，包含字母和数字</span></div></div><div id="inviteMessage" class="notice hidden"></div><div><button class="btn btn-primary btn-lg" type="submit">保存并启用</button></div></form>
+            <div class="portal-card portal-card-pad"><h2>邀请码状态</h2><div id="inviteList" style="margin-top:14px"></div></div>
+          </section>
+          <section id="deletionsPanel" data-admin-content class="portal-card portal-card-pad hidden"><h2>账号删除申请</h2><p class="notice warning" style="margin-top:12px">为防止浏览器持有高权限密钥，本页不直接删除认证账号。负责人核实身份后请在 Supabase Dashboard 的 Authentication → Users 中删除；相关资料会级联删除。</p><div id="deletionList" class="admin-list" style="margin-top:20px"></div></section>
+        </div>
+      </div>
+    </div>
+  </div></main>
+
+  <div id="submissionDetailModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="detailTitle"><div class="modal"><div class="modal-head"><div><span class="eyebrow">SUBMISSION DETAIL</span><h2 id="detailTitle">提交详情</h2></div><button class="icon-button" type="button" data-close-detail aria-label="关闭">✕</button></div><div id="detailBody" class="stack"></div></div></div>
+
+  <script src="js/supabase-config.js"></script><script src="js/supabase-api.js"></script><script src="js/course-content.js"></script><script src="js/admin.js"></script>
+</body></html>
