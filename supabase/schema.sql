@@ -355,23 +355,25 @@ stable
 security definer
 set search_path = public, storage
 as $$
-declare v_parts text[]; v_size bigint; v_count integer; v_total bigint;
+declare v_parts text[]; v_count integer;
 begin
+  if auth.uid() is null then return false; end if;
   v_parts := string_to_array(p_name, '/');
-  if array_length(v_parts, 1) <> 4 or v_parts[1] <> auth.uid()::text or v_parts[3] !~ '^[1-9][0-9]*$' then return false; end if;
-  if coalesce(p_metadata ->> 'mimetype', '') not in ('application/zip', 'application/pdf', 'image/png', 'image/jpeg') then return false; end if;
-  begin v_size := (p_metadata ->> 'size')::bigint; exception when others then return false; end;
-  if v_size not between 1 and 20971520 then return false; end if;
+  if array_length(v_parts, 1) is distinct from 4
+     or v_parts[1] <> auth.uid()::text
+     or v_parts[3] !~ '^[1-9][0-9]*$' then return false; end if;
   if not exists (
     select 1 from public.submissions s
     where s.user_id = auth.uid() and not s.is_complete
       and s.assignment_id = v_parts[2] and s.version = v_parts[3]::integer
   ) then return false; end if;
-  select count(*), coalesce(sum((metadata ->> 'size')::bigint), 0) into v_count, v_total
+  select count(*) into v_count
   from storage.objects
   where bucket_id = 'homework-private'
     and name like (auth.uid()::text || '/' || v_parts[2] || '/' || v_parts[3] || '/%');
-  return v_count < 5 and v_total + v_size <= 20971520;
+  -- Storage 在 INSERT 策略执行时可能尚未填充 metadata；类型和大小继续由
+  -- 私有存储桶限制及 register_attachment 的服务端校验共同保护。
+  return v_count < 5;
 end;
 $$;
 
@@ -406,6 +408,6 @@ using (
 -- 1. 在 SQL Editor 运行下一条，将占位内容替换为强邀请码；不要把实际邀请码保存到仓库：
 -- insert into public.invitation_codes (cohort_label, code_hash)
 -- values ('2026 级', extensions.digest('替换为至少10位的首次邀请码', 'sha256'));
--- 2. 用该邀请码在网页注册负责人的普通账号并完成邮箱验证。
+-- 2. 在 Authentication 的 Email Provider 中关闭 Confirm email，再用该邀请码注册负责人账号。
 -- 3. 回到 SQL Editor，将对应邮箱安全指定为第一位管理员：
 -- update public.profiles set role = 'admin' where email = '负责人注册邮箱';
