@@ -15,6 +15,14 @@
   function showNotice(message, type) { el("adminNotice").textContent = message; el("adminNotice").className = "notice " + (type || ""); window.scrollTo({ top: 0, behavior: "smooth" }); }
   function profileFor(id) { return profiles.find(function (item) { return item.id === id; }); }
   function assignmentFor(id) { return assignments.find(function (item) { return item.id === id; }); }
+  function latestOnly(items) {
+    var seen = new Set();
+    return items.slice().sort(function (a, b) { return b.version - a.version; }).filter(function (item) {
+      if (seen.has(item.user_id + ":" + item.assignment_id)) return false;
+      seen.add(item.user_id + ":" + item.assignment_id);
+      return true;
+    });
+  }
 
   async function loadData() {
     catalog = await CourseContent.loadCatalog();
@@ -25,14 +33,34 @@
       AIClub.db("attachments?select=*&order=created_at.asc", { method: "GET" }),
       AIClub.db("invitation_codes?select=id,cohort_label,is_active,created_at,disabled_at&order=created_at.desc", { method: "GET" })
     ]);
-    profiles = results[0] || []; submissions = results[1] || []; attachments = results[2] || []; invites = results[3] || [];
+    profiles = results[0] || [];
+    var allSubmissions = results[1] || [];
+    var allAttachments = results[2] || [];
+    submissions = latestOnly(allSubmissions);
+    var keepIds = new Set(submissions.map(function (item) { return item.id; }));
+    var oldIds = new Set(allSubmissions.filter(function (item) { return !keepIds.has(item.id); }).map(function (item) { return item.id; }));
+    var oldPaths = allAttachments.filter(function (file) { return oldIds.has(file.submission_id); }).map(function (file) { return file.storage_path; });
+    if (oldIds.size) {
+      try {
+        await AIClub.removeFiles(oldPaths);
+        await AIClub.rpc("admin_prune_submission_history", {});
+      } catch (_) { /* 清理失败不影响管理员查看最新提交，下次进入后台会重试 */ }
+    }
+    attachments = allAttachments.filter(function (file) { return keepIds.has(file.submission_id); });
+    // 已从课程目录移除的任务不再计入负责人当前统计和作答列表，
+    // 但其数据库记录与附件不做物理删除，便于必要时追溯。
+    var activeAssignmentIds = new Set(assignments.map(function (item) { return item.id; }));
+    submissions = submissions.filter(function (item) { return activeAssignmentIds.has(item.assignment_id); });
+    var activeSubmissionIds = new Set(submissions.map(function (item) { return item.id; }));
+    attachments = attachments.filter(function (file) { return activeSubmissionIds.has(file.submission_id); });
+    invites = results[3] || [];
     renderAll();
   }
 
   function renderAll() {
     var students = profiles.filter(function (item) { return item.role === "student"; });
     var submitters = new Set(submissions.map(function (item) { return item.user_id; }));
-    el("adminStats").innerHTML = '<div class="portal-card stat"><strong>' + students.length + '</strong><span>注册新生</span></div><div class="portal-card stat"><strong>' + submitters.size + '</strong><span>已提交新生</span></div><div class="portal-card stat"><strong>' + submissions.length + '</strong><span>提交版本总数</span></div>';
+    el("adminStats").innerHTML = '<div class="portal-card stat"><strong>' + students.length + '</strong><span>注册新生</span></div><div class="portal-card stat"><strong>' + submitters.size + '</strong><span>已提交新生</span></div><div class="portal-card stat"><strong>' + submissions.length + '</strong><span>当前提交数</span></div>';
     renderFilterOptions(); renderSubmissions(); renderStudents(); renderInvites(); renderDeletions();
   }
 
@@ -58,7 +86,7 @@
     });
     el("adminSubmissionList").innerHTML = filtered.length ? filtered.map(function (item) {
       var student = profileFor(item.user_id); var task = assignmentFor(item.assignment_id);
-      return '<article class="portal-card admin-row"><div><div class="student-name">' + esc(student.full_name) + '</div><div class="student-detail">' + esc(student.student_id) + " · " + esc(student.major_class) + " · " + esc(student.cohort_label) + '</div></div><div><strong>' + esc(task ? task.title : item.assignment_id) + '</strong><div class="student-detail">' + esc(task ? task.courseTitle : item.course_id) + '</div></div><div><span class="status submitted">已提交 · V' + item.version + '</span><div class="student-detail">' + formatDate(item.created_at) + '</div></div><button class="btn btn-outline" type="button" data-view-submission="' + esc(item.id) + '">查看作答</button></article>';
+      return '<article class="portal-card admin-row"><div><div class="student-name">' + esc(student.full_name) + '</div><div class="student-detail">' + esc(student.student_id) + " · " + esc(student.major_class) + " · " + esc(student.cohort_label) + '</div></div><div><strong>' + esc(task ? task.title : item.assignment_id) + '</strong><div class="student-detail">' + esc(task ? task.courseTitle : item.course_id) + '</div></div><div><span class="status submitted">已提交</span><div class="student-detail">' + formatDate(item.created_at) + '</div></div><button class="btn btn-outline" type="button" data-view-submission="' + esc(item.id) + '">查看作答</button></article>';
     }).join("") : '<div class="portal-card empty">当前筛选条件下没有提交记录。</div>';
   }
 
@@ -67,7 +95,7 @@
     el("studentList").innerHTML = students.length ? students.map(function (student) {
       var own = submissions.filter(function (item) { return item.user_id === student.id; });
       var taskCount = new Set(own.map(function (item) { return item.assignment_id; })).size;
-      return '<article class="portal-card admin-row"><div><div class="student-name">' + esc(student.full_name) + '</div><div class="student-detail">' + esc(student.email) + '</div></div><div><strong>' + esc(student.student_id) + '</strong><div class="student-detail">' + esc(student.major_class) + " · QQ " + esc(student.qq) + '</div></div><div><span class="chip">' + esc(student.cohort_label) + '</span></div><div><strong>' + taskCount + '</strong> 个任务 / ' + own.length + " 个版本</div></article>";
+      return '<article class="portal-card admin-row"><div><div class="student-name">' + esc(student.full_name) + '</div><div class="student-detail">' + esc(student.email) + '</div></div><div><strong>' + esc(student.student_id) + '</strong><div class="student-detail">' + esc(student.major_class) + " · QQ " + esc(student.qq) + '</div></div><div><span class="chip">' + esc(student.cohort_label) + '</span></div><div><strong>' + taskCount + '</strong> 个任务 / ' + own.length + " 个当前提交</div></article>";
     }).join("") : '<div class="empty">暂无新生账号。</div>';
   }
 
@@ -89,7 +117,7 @@
     if (!item) return;
     var student = profileFor(item.user_id); var task = assignmentFor(item.assignment_id);
     var files = attachments.filter(function (file) { return file.submission_id === id; });
-    el("detailTitle").textContent = (task ? task.title : item.assignment_id) + " · V" + item.version;
+    el("detailTitle").textContent = task ? task.title : item.assignment_id;
     el("detailBody").innerHTML = '<div class="notice"><strong>' + esc(student.full_name) + '</strong> · ' + esc(student.student_id) + " · " + esc(student.major_class) + " · QQ " + esc(student.qq) + '</div><div><strong>提交时间</strong><p class="muted">' + formatDate(item.created_at) + '</p></div><div><strong>作业说明</strong><p class="muted" style="white-space:pre-wrap">' + esc(item.description || "未填写说明") + '</p></div>' + (item.repository_url ? '<div><strong>代码仓库</strong><p><a href="' + esc(item.repository_url) + '" target="_blank" rel="noopener noreferrer">' + esc(item.repository_url) + " ↗</a></p></div>" : "") + '<div><strong>附件（' + files.length + '）</strong><div class="file-list">' + (files.length ? files.map(function (file) { return '<a class="file-link" href="#" data-download-path="' + esc(file.storage_path) + '"><span>📎 ' + esc(file.original_name) + '</span><span>' + formatBytes(file.size_bytes) + "</span></a>"; }).join("") : '<span class="muted small">没有附件</span>') + "</div></div>";
     el("submissionDetailModal").classList.remove("hidden"); document.body.style.overflow = "hidden";
   }
