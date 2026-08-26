@@ -1,0 +1,5 @@
+# Supabase CLI 配置。项目 ID 仅用于部署定位，不是密钥。
+project_id = "farfmzmspladckvuduey"
+
+[functions.feishu-sync]
+verify_jwt = false
