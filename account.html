@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>账号与作业 · 人工智能协会</title>
+  <meta name="description" content="人工智能协会新生注册与作业提交中心。">
+  <link rel="icon" href="assets/favicon.png" type="image/png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/portal.css">
+</head>
+<body class="portal-page">
+  <header class="portal-nav">
+    <div class="container portal-nav-inner">
+      <a class="brand" href="index.html"><img class="brand-logo" src="assets/logo.jpg" alt="人工智能协会会徽"><span class="brand-name">人工智能协会</span></a>
+      <nav class="portal-nav-actions" aria-label="主要导航"><a href="learn.html">学习中心</a><a class="active" href="account.html">账号与作业</a><a id="adminLink" class="hidden" href="admin.html">管理后台</a></nav>
+    </div>
+  </header>
+
+  <div class="container"><div id="globalNotice" class="notice setup-banner hidden" role="status"></div></div>
+
+  <main id="authView">
+    <section class="portal-card auth-shell">
+      <div class="auth-aside">
+        <span class="eyebrow" style="color:#ddd6fe">AI CLUB MEMBER</span>
+        <h1>学习有路径，成长有记录</h1>
+        <p>课程向所有人公开；作业文件和作答情况只有本人及协会负责人可以查看。</p>
+        <div class="auth-points">
+          <div class="auth-point"><span>✓</span><div><strong>版本留档</strong><p class="small">每次重交都会保留，不覆盖之前的努力。</p></div></div>
+          <div class="auth-point"><span>✓</span><div><strong>安全隔离</strong><p class="small">数据库与文件存储均启用权限控制。</p></div></div>
+          <div class="auth-point"><span>✓</span><div><strong>提交可见</strong><p class="small">负责人可以统一查看作答情况和下载附件。</p></div></div>
+        </div>
+      </div>
+      <div class="auth-panel">
+        <div class="tab-list" id="authTabs"><button type="button" data-auth-tab="login" class="active">登录</button><button type="button" data-auth-tab="register">新生注册</button></div>
+
+        <form id="loginForm" class="stack">
+          <div><h2>欢迎回来</h2><p class="muted small">使用注册邮箱登录作业中心</p></div>
+          <div class="field"><label for="loginEmail">邮箱</label><input id="loginEmail" name="email" type="email" autocomplete="email" required></div>
+          <div class="field"><label for="loginPassword">密码</label><input id="loginPassword" name="password" type="password" autocomplete="current-password" minlength="8" required></div>
+          <div id="loginMessage" class="notice hidden" role="status"></div>
+          <div class="form-actions"><button class="btn btn-primary btn-lg" type="submit">登录</button><button class="text-button" id="forgotButton" type="button">忘记密码？</button></div>
+        </form>
+
+        <form id="registerForm" class="stack hidden">
+          <div><h2>新生注册</h2><p class="muted small">需填写本届邀请码，邮箱验证后方可登录</p></div>
+          <div class="form-grid">
+            <div class="field"><label for="regEmail">邮箱</label><input id="regEmail" name="email" type="email" autocomplete="email" maxlength="254" required></div>
+            <div class="field"><label for="regName">真实姓名</label><input id="regName" name="fullName" maxlength="50" autocomplete="name" required></div>
+            <div class="field"><label for="regStudentId">学号</label><input id="regStudentId" name="studentId" maxlength="30" inputmode="numeric" required></div>
+            <div class="field"><label for="regMajor">专业班级</label><input id="regMajor" name="majorClass" maxlength="80" placeholder="如：自动化 2601 班" required></div>
+            <div class="field"><label for="regQQ">QQ</label><input id="regQQ" name="qq" inputmode="numeric" pattern="[1-9][0-9]{4,11}" maxlength="12" required></div>
+            <div class="field"><label for="regInvite">本届邀请码</label><input id="regInvite" name="inviteCode" type="password" maxlength="64" autocomplete="off" required></div>
+            <div class="field"><label for="regPassword">密码</label><input id="regPassword" name="password" type="password" minlength="8" maxlength="72" autocomplete="new-password" required><span class="field-help">至少 8 位，不要与其他网站共用密码</span></div>
+            <div class="field"><label for="regPasswordConfirm">确认密码</label><input id="regPasswordConfirm" name="passwordConfirm" type="password" minlength="8" maxlength="72" autocomplete="new-password" required></div>
+            <label class="check-row field full"><input name="privacyAccepted" type="checkbox" required><span>我已阅读<a href="privacy.html" target="_blank">个人信息说明</a>，同意协会负责人为成员识别、作业批阅和必要联系使用上述信息。</span></label>
+          </div>
+          <div id="registerMessage" class="notice hidden" role="status"></div>
+          <div class="form-actions"><button class="btn btn-primary btn-lg" type="submit">注册并发送验证邮件</button></div>
+        </form>
+
+        <form id="recoverForm" class="stack hidden">
+          <div><h2>重置密码</h2><p class="muted small">输入注册邮箱，我们会发送密码重置链接。</p></div>
+          <div class="field"><label for="recoverEmail">邮箱</label><input id="recoverEmail" name="email" type="email" autocomplete="email" required></div>
+          <div id="recoverMessage" class="notice hidden" role="status"></div>
+          <div class="form-actions"><button class="btn btn-primary btn-lg" type="submit">发送重置邮件</button><button class="text-button" data-back-login type="button">返回登录</button></div>
+        </form>
+
+        <form id="newPasswordForm" class="stack hidden">
+          <div><h2>设置新密码</h2><p class="muted small">新密码至少 8 位。</p></div>
+          <div class="field"><label for="newPassword">新密码</label><input id="newPassword" name="password" type="password" minlength="8" maxlength="72" autocomplete="new-password" required></div>
+          <div class="field"><label for="newPasswordConfirm">确认新密码</label><input id="newPasswordConfirm" name="passwordConfirm" type="password" minlength="8" maxlength="72" autocomplete="new-password" required></div>
+          <div id="newPasswordMessage" class="notice hidden" role="status"></div>
+          <button class="btn btn-primary btn-lg" type="submit">保存新密码</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <main id="dashboardView" class="portal-main hidden">
+    <div class="container">
+      <div class="dashboard-head split"><div><span class="eyebrow">MEMBER CENTER</span><h1 id="welcomeTitle">我的学习中心</h1><p class="muted" id="profileSummary"></p></div><button id="signOutButton" class="btn btn-outline btn-lg" type="button">退出登录</button></div>
+      <div class="dashboard-layout">
+        <nav class="portal-card dashboard-menu" id="dashboardMenu">
+          <button class="active" type="button" data-panel="tasks">📚 作业任务</button>
+          <button type="button" data-panel="submissions">📦 提交记录</button>
+          <button type="button" data-panel="profile">👤 个人资料</button>
+          <a href="learn.html">↗ 公开课程</a>
+        </nav>
+        <div>
+          <section id="tasksPanel" data-dashboard-panel class="stack">
+            <div class="stat-grid" id="studentStats"></div>
+            <div class="portal-card portal-card-pad"><div class="split"><div><h2>课程任务</h2><p class="muted small">选择任务提交或查看最新状态</p></div></div><div id="taskList" class="task-list" style="margin-top:20px"></div></div>
+          </section>
+          <section id="submissionsPanel" data-dashboard-panel class="portal-card portal-card-pad hidden"><h2>全部提交记录</h2><p class="muted small">重交不会覆盖旧版本</p><div id="submissionList" class="submission-list" style="margin-top:20px"></div></section>
+          <section id="profilePanel" data-dashboard-panel class="portal-card portal-card-pad hidden"><h2>个人资料与隐私</h2><div id="profileDetails" class="stack" style="margin-top:20px"></div></section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="submitModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="submitModalTitle">
+    <form id="submissionForm" class="modal">
+      <div class="modal-head"><div><span class="eyebrow">SUBMISSION</span><h2 id="submitModalTitle">提交作业</h2><p id="submitModalDescription" class="muted small"></p></div><button class="icon-button" type="button" data-close-modal aria-label="关闭">✕</button></div>
+      <div class="stack">
+        <div class="field"><label for="repositoryUrl">代码仓库链接（选填）</label><input id="repositoryUrl" name="repositoryUrl" type="url" maxlength="500" placeholder="https://github.com/... 或 https://gitee.com/..."></div>
+        <div class="field"><label for="submissionDescription">作业说明（选填）</label><textarea id="submissionDescription" name="description" maxlength="2000" placeholder="可以补充运行方法或其他说明"></textarea><span class="field-help">最多 2000 字</span></div>
+        <div class="field"><label for="submissionFiles">附件</label><input id="submissionFiles" name="files" type="file" accept=".zip,.pdf,.png,.jpg,.jpeg,application/zip,application/pdf,image/png,image/jpeg" multiple required><span class="field-help">ZIP / PDF / PNG / JPEG；最多 5 个文件，总计不超过 20MB</span></div>
+        <div id="fileSummary" class="muted small"></div>
+        <div id="submissionMessage" class="notice hidden" role="status"></div>
+        <div class="form-actions"><button id="submitHomeworkButton" class="btn btn-primary btn-lg" type="submit">确认提交</button><button class="btn btn-outline btn-lg" type="button" data-close-modal>取消</button></div>
+      </div>
+    </form>
+  </div>
+
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-api.js"></script>
+  <script src="js/course-content.js"></script>
+  <script src="js/account.js"></script>
+</body>
+</html>
