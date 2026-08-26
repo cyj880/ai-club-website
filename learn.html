@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新生学习中心 · 人工智能协会</title>
+  <meta name="description" content="人工智能协会 C 语言与 STM32 新生公开学习路线。">
+  <link rel="icon" href="assets/favicon.png" type="image/png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/portal.css">
+</head>
+<body class="portal-page">
+  <header class="portal-nav">
+    <div class="container portal-nav-inner">
+      <a class="brand" href="index.html"><img class="brand-logo" src="assets/logo.jpg" alt="人工智能协会会徽"><span class="brand-name">人工智能协会</span></a>
+      <nav class="portal-nav-actions" aria-label="主要导航">
+        <a class="active" href="learn.html">学习中心</a>
+        <a href="account.html" id="accountLink">登录 / 交作业</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="portal-hero">
+    <div class="container">
+      <div class="breadcrumb"><a href="index.html">首页</a><span>/</span><span>新生学习</span></div>
+      <h1>新生学习中心</h1>
+      <p>课程内容对所有人开放。按照章节学习并完成任务，协会新生登录后可以上传作业，负责人可以查看作答情况。</p>
+    </div>
+  </section>
+
+  <main class="portal-main">
+    <div class="container">
+      <div id="setupNotice" class="notice warning setup-banner hidden">作业系统尚未连接 Supabase；公开课程仍可正常学习。</div>
+      <div class="portal-grid">
+        <aside class="portal-sidebar">
+          <div class="portal-card course-switcher" id="courseSwitcher" aria-label="课程选择"></div>
+          <nav class="portal-card chapter-nav" id="chapterNav" aria-label="章节目录"></nav>
+        </aside>
+        <div id="courseMain" aria-live="polite"><div class="portal-card loading">正在加载课程…</div></div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer"><div class="container"><p>人工智能协会 · 新生学习中心</p><p class="footer-sub">课程公开学习，作业仅本人和负责人可见</p></div></footer>
+
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-api.js"></script>
+  <script src="js/course-content.js"></script>
+  <script src="js/learn.js"></script>
+</body>
+</html>
