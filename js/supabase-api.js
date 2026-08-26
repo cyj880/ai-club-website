@@ -230,7 +230,7 @@
     var message = (err && err.message) || "操作失败，请稍后重试";
     var known = [
       [/Invalid login credentials/i, "邮箱或密码错误"],
-      [/Email not confirmed/i, "请先打开验证邮件完成邮箱验证"],
+      [/Email not confirmed/i, "此账号仍处于邮箱未确认状态，请联系负责人处理"],
       [/User already registered/i, "该邮箱已经注册"],
       [/Password should be at least/i, "密码长度至少为 8 位"],
       [/invalid invite code/i, "邀请码错误或已停用"],
