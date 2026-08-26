@@ -30,6 +30,13 @@
     document.querySelectorAll("[data-auth-tab]").forEach(function (button) { button.classList.toggle("active", button.dataset.authTab === name); });
   }
 
+  function showAuthReady(name) {
+    el("authCheckingView").classList.add("hidden");
+    el("dashboardView").classList.add("hidden");
+    el("authView").classList.remove("hidden");
+    showAuthPanel(name || "login");
+  }
+
   function validateFiles(fileList) {
     var files = Array.from(fileList || []);
     if (!files.length) throw new Error("请至少选择一个附件");
@@ -50,11 +57,6 @@
     return new File([file], file.name, { type: types[extension], lastModified: file.lastModified });
   }
 
-  function safeFileName(name) {
-    var clean = name.normalize("NFKC").replace(/[^\w.\-\u4e00-\u9fff]+/g, "-").replace(/^-+|-+$/g, "");
-    return clean.slice(-100) || "file";
-  }
-
   function randomId() {
     if (crypto.randomUUID) return crypto.randomUUID();
     var bytes = new Uint8Array(16); crypto.getRandomValues(bytes);
@@ -71,6 +73,7 @@
     ]);
     submissions = results[0] || [];
     attachments = results[1] || [];
+    el("authCheckingView").classList.add("hidden");
     el("authView").classList.add("hidden");
     el("dashboardView").classList.remove("hidden");
     el("welcomeTitle").textContent = profile.full_name + "，继续学习吧";
@@ -140,7 +143,9 @@
       for (var i = 0; i < validated.files.length; i += 1) {
         var original = validated.files[i];
         var file = normalizeFile(original);
-        var path = profile.id + "/" + selectedAssignment.id + "/" + created.version + "/" + randomId() + "-" + safeFileName(file.name);
+        // Storage 对象名只使用 ASCII；原始文件名（包括中文）单独写入附件记录。
+        var extension = (original.name.split(".").pop() || "").toLowerCase();
+        var path = profile.id + "/" + selectedAssignment.id + "/" + created.version + "/" + randomId() + "." + extension;
         showMessage(message, "正在上传第 " + (i + 1) + " / " + validated.files.length + " 个附件…", "");
         await AIClub.upload(path, file);
         uploadedPaths.push(path);
@@ -224,7 +229,7 @@
       if (!inviteValid) throw new Error("invalid invite code");
       var data = await AIClub.signUp({ email: form.email.value.trim(), password: form.password.value, fullName: form.fullName.value.trim(), studentId: form.studentId.value.trim(), majorClass: form.majorClass.value.trim(), qq: form.qq.value.trim(), inviteCode: form.inviteCode.value });
       if (data && data.access_token) await loadDashboard();
-      else { form.reset(); showMessage(message, "注册成功。请打开验证邮件完成邮箱验证，然后返回登录。", "success"); }
+      else { form.reset(); showMessage(message, "账号已创建，请使用刚才的邮箱和密码登录；如果无法登录，请联系负责人。", "success"); }
     } catch (err) { showMessage(message, AIClub.friendlyError(err), "error"); }
     finally { setBusy(form, false); }
   });
@@ -249,17 +254,19 @@
 
   async function init() {
     if (!AIClub.configured()) {
+      showAuthReady("login");
       showMessage(el("globalNotice"), "作业系统尚未配置 Supabase。请先按照 README 完成后端初始化并填写公开项目配置；公开课程不受影响。", "warning");
       document.querySelectorAll("#authView form button[type=submit], #authView form input").forEach(function (item) { item.disabled = true; });
       return;
     }
     try {
       var redirect = AIClub.acceptAuthRedirect();
-      if (redirect && redirect.type === "recovery") { showAuthPanel("newPassword"); return; }
-      if (new URLSearchParams(location.search).get("action") === "reset" && redirect) { showAuthPanel("newPassword"); return; }
+      if (redirect && redirect.type === "recovery") { showAuthReady("newPassword"); return; }
+      if (new URLSearchParams(location.search).get("action") === "reset" && redirect) { showAuthReady("newPassword"); return; }
       var active = await AIClub.session(false);
       if (active) await loadDashboard();
-    } catch (err) { showGlobalError(err); }
+      else showAuthReady("login");
+    } catch (err) { showAuthReady("login"); showGlobalError(err); }
   }
   init();
 })();
