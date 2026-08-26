@@ -32,7 +32,7 @@ js/supabase-config.js        允许公开的 Supabase 浏览器配置
    - Site URL：`https://cyj880.github.io/ai-club-website/`
    - Redirect URLs：`https://cyj880.github.io/ai-club-website/account.html*`
    - 本地调试时另加 `http://127.0.0.1:8000/account.html*`
-5. 使用首次邀请码在网站注册负责人的账号并完成邮箱验证，然后在 SQL Editor 执行：
+5. 使用首次邀请码在网站注册负责人的账号，然后在 SQL Editor 执行：
 
    ```sql
    update public.profiles
@@ -42,7 +42,7 @@ js/supabase-config.js        允许公开的 Supabase 浏览器配置
 
 6. 管理员登录后进入 `admin.html`，即可创建或更换每届共用的邀请码。浏览器端没有提升管理员权限的接口。
 
-建议在 Authentication 中保持邮箱验证开启，并根据实际邮件量配置 SMTP。上线前检查 Supabase 当前免费额度，约 100 名活跃新生通常足够使用，但附件会占用 Storage 容量。
+本项目依靠届别邀请码控制注册，建议在 Authentication 的 Email Provider 中关闭 Confirm email，让新生注册后直接进入。邮箱仍用于登录和密码重置，因此应要求填写本人可用邮箱；如需可靠使用密码重置邮件，请配置自定义 SMTP。上线前检查 Supabase 当前免费额度，约 100 名活跃新生通常足够使用，但附件会占用 Storage 容量。
 
 ## 课程内容维护
 
@@ -91,7 +91,7 @@ Remove-Item Env:\AI_CLUB_GITHUB_TOKEN
 ## 上线验收
 
 - 使用访客、两个新生和一个管理员账号分别测试权限边界。
-- 测试错误/停用邀请码、重复学号、邮箱验证与密码重置。
+- 测试错误/停用邀请码、重复学号、注册后直接登录与密码重置。
 - 测试非法类型、超过 5 个文件、总大小超过 20MB、上传中断及重交版本。
 - 验证新生无法通过直接 API 请求读取其他人的资料和附件。
 - 分别在校园网、宿舍网和手机流量测试登录及 10MB 文件上传；若 Supabase 连通性不稳定，再迁移到国内云后端。
