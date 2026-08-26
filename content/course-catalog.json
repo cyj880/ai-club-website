@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "courses": [
+    {
+      "id": "c-language",
+      "title": "C 语言基础",
+      "shortTitle": "C 语言",
+      "icon": "C",
+      "summary": "从开发环境和基本语法开始，逐步掌握函数、数组、指针与模块化编程，为嵌入式开发打好基础。",
+      "level": "零基础",
+      "duration": "建议 6 周",
+      "chapters": [
+        {
+          "id": "c-01-start",
+          "title": "第 1 章：环境与第一段程序",
+          "content": "content/c-language/01-start.md",
+          "assignment": {
+            "id": "c-01-hello",
+            "title": "C01 · Hello AI Club",
+            "description": "完成开发环境配置，提交能够编译运行的第一个 C 程序和运行截图。"
+          }
+        },
+        {
+          "id": "c-02-control",
+          "title": "第 2 章：变量与流程控制",
+          "content": "content/c-language/02-control.md",
+          "assignment": {
+            "id": "c-02-menu",
+            "title": "C02 · 控制台菜单",
+            "description": "使用分支与循环实现一个可重复操作的控制台菜单。"
+          }
+        },
+        {
+          "id": "c-03-function",
+          "title": "第 3 章：函数与数组",
+          "content": "content/c-language/03-function.md",
+          "assignment": {
+            "id": "c-03-stats",
+            "title": "C03 · 数据统计器",
+            "description": "将数据输入、计算和显示拆分为函数，完成一组数据的统计。"
+          }
+        },
+        {
+          "id": "c-04-pointer",
+          "title": "第 4 章：指针与结构体",
+          "content": "content/c-language/04-pointer.md",
+          "assignment": {
+            "id": "c-04-students",
+            "title": "C04 · 学生信息管理",
+            "description": "使用结构体数组和指针完成简单的信息增查与排序。"
+          }
+        }
+      ]
+    },
+    {
+      "id": "stm32",
+      "title": "STM32 入门",
+      "shortTitle": "STM32",
+      "icon": "32",
+      "summary": "认识微控制器和开发工具，从 GPIO 出发学习常用外设，最终完成一个可演示的小型嵌入式项目。",
+      "level": "完成 C 语言基础后",
+      "duration": "建议 8 周",
+      "chapters": [
+        {
+          "id": "stm32-01-start",
+          "title": "第 1 章：工具链与点灯",
+          "content": "content/stm32/01-start.md",
+          "assignment": {
+            "id": "stm32-01-led",
+            "title": "STM01 · LED 闪烁",
+            "description": "创建工程并实现 LED 按固定周期闪烁，提交源码、接线说明和现象视频或图片。"
+          }
+        },
+        {
+          "id": "stm32-02-gpio",
+          "title": "第 2 章：GPIO 输入与中断",
+          "content": "content/stm32/02-gpio.md",
+          "assignment": {
+            "id": "stm32-02-button",
+            "title": "STM02 · 按键控制",
+            "description": "使用按键输入或外部中断控制 LED 状态，并处理基本的按键抖动。"
+          }
+        },
+        {
+          "id": "stm32-03-peripherals",
+          "title": "第 3 章：定时器、PWM 与串口",
+          "content": "content/stm32/03-peripherals.md",
+          "assignment": {
+            "id": "stm32-03-pwm",
+            "title": "STM03 · PWM 调光",
+            "description": "通过 PWM 改变 LED 亮度，并从串口输出当前参数。"
+          }
+        },
+        {
+          "id": "stm32-04-capstone",
+          "title": "第 4 章：综合实践",
+          "content": "content/stm32/04-project.md",
+          "assignment": {
+            "id": "stm32-04-project",
+            "title": "STM04 · 结课小项目",
+            "description": "组合至少两种外设完成一个可演示的小项目，提交完整工程和项目说明。"
+          }
+        }
+      ]
+    }
+  ]
+}
