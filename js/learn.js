@@ -40,7 +40,7 @@
     if (courseAtRequest !== currentCourse || chapterAtRequest !== currentChapter) return;
     var assignment = chapterAtRequest.assignment;
     main.innerHTML = '<section class="portal-card course-overview"><span class="eyebrow">' + CourseContent.escapeHtml(courseAtRequest.id.toUpperCase()) + '</span><h2>' + CourseContent.escapeHtml(courseAtRequest.title) + '</h2><p>' + CourseContent.escapeHtml(courseAtRequest.summary) + '</p><div class="course-meta"><span class="chip">' + CourseContent.escapeHtml(courseAtRequest.level) + '</span><span class="chip">' + CourseContent.escapeHtml(courseAtRequest.duration) + '</span><span class="chip">' + courseAtRequest.chapters.length + ' 个章节</span></div></section>' +
-      '<article class="portal-card markdown-body">' + CourseContent.renderMarkdown(markdown) + (assignment ? '<aside class="assignment-callout"><span class="chip">本章作业</span><h3>' + CourseContent.escapeHtml(assignment.title) + '</h3><p>' + CourseContent.escapeHtml(assignment.description) + '</p><a class="btn btn-primary btn-lg" href="account.html?assignment=' + encodeURIComponent(assignment.id) + '">登录后提交作业</a></aside>' : "") + "</article>";
+      '<article class="portal-card markdown-body">' + CourseContent.renderMarkdown(markdown) + (assignment ? '<aside class="assignment-callout"><span class="chip">本章作业</span><h3>' + CourseContent.escapeHtml(assignment.title) + '</h3><p>' + CourseContent.escapeHtml(assignment.description) + '</p><a class="btn btn-primary btn-lg" href="account.html?assignment=' + encodeURIComponent(assignment.id) + '">前往提交作业</a></aside>' : "") + "</article>";
   }
 
   switcher.addEventListener("click", function (event) {
