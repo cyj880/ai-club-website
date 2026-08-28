@@ -94,7 +94,7 @@
     el("dashboardView").classList.remove("hidden");
     el("welcomeTitle").textContent = profile.full_name + "，继续学习吧";
     el("profileSummary").textContent = profile.cohort_label + " · " + profile.major_class;
-    if (profile.role === "admin") el("adminLink").classList.remove("hidden");
+    if (profile.role === "admin" || profile.role === "owner") el("adminLink").classList.remove("hidden");
     renderDashboard();
     var requested = new URLSearchParams(location.search).get("assignment");
     if (requested) {
@@ -143,13 +143,13 @@
 
     el("submissionList").innerHTML = submissions.length ? submissions.map(renderSubmission).join("") : '<div class="empty">还没有提交记录。</div>';
     var deletionText = profile.deletion_requested_at ? '<div class="notice warning">已于 ' + formatDate(profile.deletion_requested_at) + ' 提交删除申请。管理员确认身份后会处理。</div><button class="text-button" type="button" id="cancelDeletion">撤回删除申请</button>' : '<div class="notice">如需删除账号及全部个人资料，可以在这里提交申请。管理员需要在 Supabase 后台确认执行。</div><button class="btn btn-outline" type="button" id="requestDeletion">申请删除账号及资料</button>';
-    el("profileDetails").innerHTML = '<div class="form-grid"><div class="field"><label>真实姓名</label><div>' + esc(profile.full_name) + '</div></div><div class="field"><label>学号</label><div>' + esc(profile.student_id) + '</div></div><div class="field"><label>专业班级</label><div>' + esc(profile.major_class) + '</div></div><div class="field"><label>QQ</label><div>' + esc(profile.qq) + '</div></div><div class="field"><label>届别</label><div>' + esc(profile.cohort_label) + '</div></div><div class="field"><label>账号角色</label><div>' + (profile.role === "admin" ? "管理员" : "新生") + '</div></div></div><div class="divider"></div>' + deletionText + '<p class="muted small">资料需要更正时，请通过招新 QQ 群 551018478 联系负责人。</p>';
+    el("profileDetails").innerHTML = '<div class="form-grid"><div class="field"><label>真实姓名</label><div>' + esc(profile.full_name) + '</div></div><div class="field"><label>学号</label><div>' + esc(profile.student_id) + '</div></div><div class="field"><label>专业班级</label><div>' + esc(profile.major_class) + '</div></div><div class="field"><label>QQ</label><div>' + esc(profile.qq) + '</div></div><div class="field"><label>届别</label><div>' + esc(profile.cohort_label) + '</div></div><div class="field"><label>账号角色</label><div>' + (profile.role === "owner" ? "群主" : profile.role === "admin" ? "管理员" : "新生") + '</div></div></div><div class="divider"></div>' + deletionText + '<p class="muted small">资料需要更正时，请通过招新 QQ 群 551018478 联系负责人。</p>';
   }
 
   function renderSubmission(item) {
     var assignment = allAssignments.find(function (a) { return a.id === item.assignment_id; });
     var files = attachments.filter(function (file) { return file.submission_id === item.id; });
-    return '<article class="portal-card submission-card"><div class="split"><div><span class="chip">' + esc(assignment ? assignment.courseTitle : item.course_id) + '</span><h3>' + esc(assignment ? assignment.title : item.assignment_id) + '</h3></div><span class="status submitted">当前提交</span></div><p class="muted small">提交于 ' + formatDate(item.created_at) + '</p>' + (item.description ? '<p style="margin-top:10px;white-space:pre-wrap">' + esc(item.description) + "</p>" : "") + (item.repository_url ? '<p class="small"><a href="' + esc(item.repository_url) + '" target="_blank" rel="noopener noreferrer">查看代码仓库 ↗</a></p>' : "") + renderFiles(files) + "</article>";
+    return '<article class="portal-card submission-card"><div class="split"><div><span class="chip">' + esc(assignment ? assignment.courseTitle : item.course_id) + '</span><h3>' + esc(assignment ? assignment.title : item.assignment_id) + '</h3></div><span class="status submitted">当前提交</span></div><p class="muted small">提交于 ' + formatDate(item.created_at) + '</p>' + (item.description ? '<p style="margin-top:10px;white-space:pre-wrap">' + esc(item.description) + "</p>" : "") + (item.repository_url ? '<p class="small"><a href="' + esc(item.repository_url) + '" target="_blank" rel="noopener noreferrer">查看链接（代码 / 演示视频）↗</a></p>' : "") + renderFiles(files) + "</article>";
   }
 
   function renderFiles(files) {
