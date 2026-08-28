@@ -97,48 +97,68 @@
       "title": "STM32 入门",
       "shortTitle": "STM32",
       "icon": "32",
-      "summary": "认识微控制器和开发工具，从 GPIO 出发学习常用外设，最终完成一个可演示的小型嵌入式项目。",
+      "summary": "跟随 B 站《STM32入门教程-2023版》学习 GPIO、OLED、PWM、舵机、ADC 与串口，完成 5 个初期任务后挑战智能小车综合项目。",
       "level": "完成 C 语言基础后",
       "duration": "建议 8 周",
       "chapters": [
         {
-          "id": "stm32-01-start",
-          "title": "第 1 章：工具链与点灯",
-          "content": "content/stm32/01-start.md",
+          "id": "stm32-01-led-flow",
+          "title": "第 1 章：开发环境与流水灯",
+          "content": "content/stm32/01-led-flow.md",
           "assignment": {
-            "id": "stm32-01-led",
-            "title": "STM01 · LED 闪烁",
-            "description": "创建工程并实现 LED 按固定周期闪烁，提交源码、接线说明和现象视频或图片。"
+            "id": "stm32-2026-01-led-flow",
+            "title": "STM01 · 流水灯",
+            "description": "搭建开发环境，实现多个 LED 依次点亮循环流动的效果，提交工程代码和演示视频。"
           }
         },
         {
-          "id": "stm32-02-gpio",
-          "title": "第 2 章：GPIO 输入与中断",
-          "content": "content/stm32/02-gpio.md",
+          "id": "stm32-02-oled",
+          "title": "第 2 章：OLED 显示",
+          "content": "content/stm32/02-oled.md",
           "assignment": {
-            "id": "stm32-02-button",
-            "title": "STM02 · 按键控制",
-            "description": "使用按键输入或外部中断控制 LED 状态，并处理基本的按键抖动。"
+            "id": "stm32-2026-02-oled",
+            "title": "STM02 · OLED 显示姓名学号",
+            "description": "驱动 OLED 屏幕显示自己的姓名和学号，提交工程代码和演示视频。"
           }
         },
         {
-          "id": "stm32-03-peripherals",
-          "title": "第 3 章：定时器、PWM 与串口",
-          "content": "content/stm32/03-peripherals.md",
+          "id": "stm32-03-joystick-pwm",
+          "title": "第 3 章：PWM 与摇杆",
+          "content": "content/stm32/03-joystick-pwm.md",
           "assignment": {
-            "id": "stm32-03-pwm",
-            "title": "STM03 · PWM 调光",
-            "description": "通过 PWM 改变 LED 亮度，并从串口输出当前参数。"
+            "id": "stm32-2026-03-joystick-pwm",
+            "title": "STM03 · 摇杆 PWM 调光",
+            "description": "用摇杆控制 PWM 占空比调节 LED 亮度，摇杆居中灯最暗，推到端点灯最亮，提交工程代码和演示视频。"
           }
         },
         {
-          "id": "stm32-04-capstone",
-          "title": "第 4 章：综合实践",
-          "content": "content/stm32/04-project.md",
+          "id": "stm32-04-servo",
+          "title": "第 4 章：舵机控制",
+          "content": "content/stm32/04-servo.md",
           "assignment": {
-            "id": "stm32-04-project",
-            "title": "STM04 · 结课小项目",
-            "description": "组合至少两种外设完成一个可演示的小项目，提交完整工程和项目说明。"
+            "id": "stm32-2026-04-servo",
+            "title": "STM04 · 按键控制舵机",
+            "description": "用按键切换舵机角度（如 0°/45°/90°/135°/180° 循环），提交工程代码和演示视频。"
+          }
+        },
+        {
+          "id": "stm32-05-adc-uart",
+          "title": "第 5 章：ADC 与串口通信",
+          "content": "content/stm32/05-adc-uart.md",
+          "assignment": {
+            "id": "stm32-2026-05-adc-uart",
+            "title": "STM05 · 光敏电阻 ADC 上传",
+            "description": "用 ADC 实时读取光敏电阻的分压值，按下按键后通过串口发送到上位机（串口助手），提交工程代码和演示视频。"
+          }
+        },
+        {
+          "id": "stm32-06-capstone",
+          "title": "第 6 章：综合实践 · 智能小车",
+          "content": "content/stm32/06-project.md",
+          "assignment": {
+            "id": "stm32-2026-06-car",
+            "title": "STM06 · 智能小车（巡线 / 遥控 / 避障）",
+            "description": "完成一辆具备循迹、遥控和避障功能的智能小车，提交完整工程代码和演示视频。"
           }
         }
       ]
