@@ -15,6 +15,23 @@
   function showNotice(message, type) { el("adminNotice").textContent = message; el("adminNotice").className = "notice " + (type || ""); window.scrollTo({ top: 0, behavior: "smooth" }); }
   function profileFor(id) { return profiles.find(function (item) { return item.id === id; }); }
   function assignmentFor(id) { return assignments.find(function (item) { return item.id === id; }); }
+
+  // 从 B 站视频链接中提取 BV 号（严格校验，只允许 player.bilibili.com 作为 iframe 源）
+  function bilibiliId(url) {
+    if (!url) return null;
+    var match = url.match(/bilibili\.com\/video\/(BV[0-9A-Za-z]{10})/i);
+    return match ? match[1] : null;
+  }
+
+  // 链接区块：B 站视频内嵌播放器，其它链接保持普通跳转
+  function renderLinkBlock(url) {
+    if (!url) return "";
+    var bv = bilibiliId(url);
+    if (bv) {
+      return '<div><strong>演示视频</strong><div class="video-embed"><iframe src="https://player.bilibili.com/player.html?bvid=' + bv + '&autoplay=0&danmaku=0&high_quality=1" title="演示视频" allowfullscreen scrolling="no"></iframe></div><p class="muted small">若播放器未显示，<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">点此在 B 站打开 ↗</a></p></div>';
+    }
+    return '<div><strong>链接</strong><p><a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(url) + " ↗</a></p></div>";
+  }
   function latestOnly(items) {
     var seen = new Set();
     return items.slice().sort(function (a, b) { return b.version - a.version; }).filter(function (item) {
@@ -58,7 +75,7 @@
   }
 
   function renderAll() {
-    var students = profiles.filter(function (item) { return item.role === "student"; });
+    var students = profiles.filter(function (item) { return item.role !== "owner"; });
     var submitters = new Set(submissions.map(function (item) { return item.user_id; }));
     el("adminStats").innerHTML = '<div class="portal-card stat"><strong>' + students.length + '</strong><span>注册新生</span></div><div class="portal-card stat"><strong>' + submitters.size + '</strong><span>已提交新生</span></div><div class="portal-card stat"><strong>' + submissions.length + '</strong><span>当前提交数</span></div>';
     renderFilterOptions(); renderSubmissions(); renderStudents(); renderInvites(); renderDeletions();
@@ -90,12 +107,24 @@
     }).join("") : '<div class="portal-card empty">当前筛选条件下没有提交记录。</div>';
   }
 
+  function roleBadge(role) {
+    if (role === "admin") return '<span class="status submitted">管理员</span>';
+    return '<span class="status unsubmitted">成员</span>';
+  }
+
   function renderStudents() {
-    var students = profiles.filter(function (item) { return item.role === "student"; });
+    var students = profiles.filter(function (item) { return item.role !== "owner"; });
+    var isOwner = adminProfile && adminProfile.role === "owner";
     el("studentList").innerHTML = students.length ? students.map(function (student) {
       var own = submissions.filter(function (item) { return item.user_id === student.id; });
       var taskCount = new Set(own.map(function (item) { return item.assignment_id; })).size;
-      return '<article class="portal-card admin-row"><div><div class="student-name">' + esc(student.full_name) + '</div><div class="student-detail">' + esc(student.email) + '</div></div><div><strong>' + esc(student.student_id) + '</strong><div class="student-detail">' + esc(student.major_class) + " · QQ " + esc(student.qq) + '</div></div><div><span class="chip">' + esc(student.cohort_label) + '</span></div><div><strong>' + taskCount + '</strong> 个任务 / ' + own.length + " 个当前提交</div></article>";
+      var manage = "";
+      if (isOwner) {
+        manage = student.role === "admin"
+          ? '<button class="text-button" type="button" data-set-role="' + esc(student.id) + '|student">移除管理员</button>'
+          : '<button class="text-button" type="button" data-set-role="' + esc(student.id) + '|admin">设为管理员</button>';
+      }
+      return '<article class="portal-card admin-row"><div><div class="student-name">' + esc(student.full_name) + '</div><div class="student-detail">' + esc(student.email) + '</div></div><div><strong>' + esc(student.student_id) + '</strong><div class="student-detail">' + esc(student.major_class) + " · QQ " + esc(student.qq) + '</div></div><div>' + roleBadge(student.role) + '<div class="student-detail" style="margin-top:6px"><span class="chip">' + esc(student.cohort_label) + '</span></div></div><div><strong>' + taskCount + '</strong> 个任务 / ' + own.length + " 个当前提交" + (manage ? '<div style="margin-top:8px">' + manage + "</div>" : "") + "</div></article>";
     }).join("") : '<div class="empty">暂无新生账号。</div>';
   }
 
@@ -118,7 +147,7 @@
     var student = profileFor(item.user_id); var task = assignmentFor(item.assignment_id);
     var files = attachments.filter(function (file) { return file.submission_id === id; });
     el("detailTitle").textContent = task ? task.title : item.assignment_id;
-    el("detailBody").innerHTML = '<div class="notice"><strong>' + esc(student.full_name) + '</strong> · ' + esc(student.student_id) + " · " + esc(student.major_class) + " · QQ " + esc(student.qq) + '</div><div><strong>提交时间</strong><p class="muted">' + formatDate(item.created_at) + '</p></div><div><strong>作业说明</strong><p class="muted" style="white-space:pre-wrap">' + esc(item.description || "未填写说明") + '</p></div>' + (item.repository_url ? '<div><strong>代码仓库</strong><p><a href="' + esc(item.repository_url) + '" target="_blank" rel="noopener noreferrer">' + esc(item.repository_url) + " ↗</a></p></div>" : "") + '<div><strong>附件（' + files.length + '）</strong><div class="file-list">' + (files.length ? files.map(function (file) { return '<a class="file-link" href="#" data-download-path="' + esc(file.storage_path) + '"><span>📎 ' + esc(file.original_name) + '</span><span>' + formatBytes(file.size_bytes) + "</span></a>"; }).join("") : '<span class="muted small">没有附件</span>') + "</div></div>";
+    el("detailBody").innerHTML = '<div class="notice"><strong>' + esc(student.full_name) + '</strong> · ' + esc(student.student_id) + " · " + esc(student.major_class) + " · QQ " + esc(student.qq) + '</div><div><strong>提交时间</strong><p class="muted">' + formatDate(item.created_at) + '</p></div><div><strong>作业说明</strong><p class="muted" style="white-space:pre-wrap">' + esc(item.description || "未填写说明") + '</p></div>' + renderLinkBlock(item.repository_url) + '<div><strong>附件（' + files.length + '）</strong><div class="file-list">' + (files.length ? files.map(function (file) { return '<a class="file-link" href="#" data-download-path="' + esc(file.storage_path) + '"><span>📎 ' + esc(file.original_name) + '</span><span>' + formatBytes(file.size_bytes) + "</span></a>"; }).join("") : '<span class="muted small">没有附件</span>') + "</div></div>";
     el("submissionDetailModal").classList.remove("hidden"); document.body.style.overflow = "hidden";
   }
 
@@ -146,6 +175,21 @@
       try { var url = await AIClub.signedUrl(download.dataset.downloadPath, 120); if (popup) { popup.opener = null; popup.location = url; } else location.href = url; }
       catch (err) { if (popup) popup.close(); showNotice(AIClub.friendlyError(err), "error"); }
     }
+    var setRole = event.target.closest("[data-set-role]");
+    if (setRole) {
+      var separator = setRole.dataset.setRole.lastIndexOf("|");
+      var targetId = setRole.dataset.setRole.slice(0, separator);
+      var newRole = setRole.dataset.setRole.slice(separator + 1);
+      var member = profileFor(targetId);
+      var actionText = newRole === "admin" ? "设为管理员" : "移除管理员";
+      if (member && confirm("确认把「" + member.full_name + "」" + actionText + "吗？")) {
+        try {
+          await AIClub.rpc("admin_set_role", { p_target_user_id: targetId, p_new_role: newRole });
+          showNotice("已" + actionText + "：" + member.full_name, "success");
+          await loadData();
+        } catch (err) { showNotice(AIClub.friendlyError(err), "error"); }
+      }
+    }
     var disable = event.target.closest("[data-disable-invite]");
     if (disable && confirm("确认停用这个邀请码吗？已注册账号不受影响。")) {
       try { await AIClub.rpc("admin_set_invite_active", { p_invite_id: disable.dataset.disableInvite, p_active: false }); await loadData(); }
@@ -170,7 +214,7 @@
       var active = await AIClub.session(false);
       if (!active) { location.href = "account.html"; return; }
       adminProfile = await AIClub.profile();
-      if (adminProfile.role !== "admin") throw new Error("当前账号没有管理员权限");
+      if (adminProfile.role !== "admin" && adminProfile.role !== "owner") throw new Error("当前账号没有管理员权限");
       await loadData();
       el("adminLoading").classList.add("hidden"); el("adminApp").classList.remove("hidden");
     } catch (err) { el("adminLoading").classList.add("hidden"); showNotice(AIClub.friendlyError(err), "error"); }
