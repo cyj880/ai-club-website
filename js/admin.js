@@ -42,14 +42,15 @@
   }
 
   async function loadData() {
-    catalog = await CourseContent.loadCatalog();
-    assignments = CourseContent.assignments(catalog);
     var results = await Promise.all([
       AIClub.db("profiles?select=id,email,full_name,student_id,major_class,qq,cohort_label,role,created_at,deletion_requested_at&order=created_at.desc", { method: "GET" }),
       AIClub.db("submissions?is_complete=eq.true&select=*&order=created_at.desc", { method: "GET" }),
       AIClub.db("attachments?select=*&order=created_at.asc", { method: "GET" }),
-      AIClub.db("invitation_codes?select=id,cohort_label,is_active,created_at,disabled_at&order=created_at.desc", { method: "GET" })
+      AIClub.db("invitation_codes?select=id,cohort_label,is_active,created_at,disabled_at&order=created_at.desc", { method: "GET" }),
+      CourseContent.loadCatalog()
     ]);
+    catalog = results[4];
+    assignments = CourseContent.assignments(catalog);
     profiles = results[0] || [];
     var allSubmissions = results[1] || [];
     var allAttachments = results[2] || [];
