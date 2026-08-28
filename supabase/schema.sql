@@ -13,7 +13,7 @@ create table if not exists public.profiles (
   major_class text not null check (char_length(major_class) between 2 and 80),
   qq text not null check (qq ~ '^[1-9][0-9]{4,11}$'),
   cohort_label text not null check (char_length(cohort_label) between 1 and 40),
-  role text not null default 'student' check (role in ('student', 'admin')),
+  role text not null default 'student' check (role in ('student', 'admin', 'owner')),
   -- 飞书多维表格中的记录 ID。它不是学号，也不会显示给新生或写入飞书字段，
   -- 只用于让同一个网站账号始终更新同一行。
   feishu_record_id text,
@@ -77,12 +77,45 @@ set search_path = public
 as $$
   select exists (
     select 1 from public.profiles
-    where id = p_user_id and role = 'admin'
+    where id = p_user_id and role in ('admin', 'owner')
   );
 $$;
 
 revoke all on function public.is_admin(uuid) from public;
 grant execute on function public.is_admin(uuid) to authenticated;
+
+-- ---------- 群主专属：设置 / 移除管理员 ----------
+create or replace function public.admin_set_role(p_target_user_id uuid, p_new_role text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_caller_role text;
+begin
+  select role into v_caller_role from public.profiles where id = auth.uid();
+  if v_caller_role is distinct from 'owner' then
+    raise exception '只有群主可以设置管理员';
+  end if;
+
+  if p_new_role not in ('student', 'admin') then
+    raise exception '无效的目标角色';
+  end if;
+
+  if not exists (
+    select 1 from public.profiles
+    where id = p_target_user_id and role in ('student', 'admin')
+  ) then
+    raise exception '目标成员不存在或无法修改';
+  end if;
+
+  update public.profiles set role = p_new_role where id = p_target_user_id;
+end;
+$$;
+
+revoke execute on function public.admin_set_role(uuid, text) from public, anon;
+grant execute on function public.admin_set_role(uuid, text) to authenticated;
 
 -- ---------- 注册与邀请码 ----------
 create or replace function public.validate_invite_code(p_code text)
@@ -588,5 +621,6 @@ using (
 -- insert into public.invitation_codes (cohort_label, code_hash)
 -- values ('2026 级', extensions.digest('替换为至少10位的首次邀请码', 'sha256'));
 -- 2. 在 Authentication 的 Email Provider 中关闭 Confirm email，再用该邀请码注册负责人账号。
--- 3. 回到 SQL Editor，将对应邮箱安全指定为第一位管理员：
--- update public.profiles set role = 'admin' where email = '负责人注册邮箱';
+-- 3. 回到 SQL Editor，将对应邮箱设为群主（owner）：
+-- update public.profiles set role = 'owner' where email = '负责人注册邮箱';
+-- 之后负责人可在网页后台直接把成员设为管理员或移除管理员，无需再进数据库。
