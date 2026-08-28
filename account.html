@@ -107,7 +107,7 @@
     <form id="submissionForm" class="modal">
       <div class="modal-head"><div><span class="eyebrow">SUBMISSION</span><h2 id="submitModalTitle">提交作业</h2><p id="submitModalDescription" class="muted small"></p></div><button class="icon-button" type="button" data-close-modal aria-label="关闭">✕</button></div>
       <div class="stack">
-        <div class="field"><label for="repositoryUrl">代码仓库链接（选填）</label><input id="repositoryUrl" name="repositoryUrl" type="url" maxlength="500" placeholder="https://github.com/... 或 https://gitee.com/..."></div>
+        <div class="field"><label for="repositoryUrl">链接（代码仓库 / 演示视频，选填）</label><input id="repositoryUrl" name="repositoryUrl" type="url" maxlength="500" placeholder="演示视频上传飞书后粘贴分享链接；或填 https://github.com/... 代码地址"></div>
         <div class="field"><label for="submissionDescription">作业说明（选填）</label><textarea id="submissionDescription" name="description" maxlength="2000" placeholder="可以补充运行方法或其他说明"></textarea><span class="field-help">最多 2000 字</span></div>
         <div class="field"><label for="submissionFiles">附件</label><input id="submissionFiles" name="files" type="file" accept=".zip,.pdf,.png,.jpg,.jpeg,application/zip,application/pdf,image/png,image/jpeg" multiple required><span class="field-help">ZIP / PDF / PNG / JPEG；最多 5 个文件，总计不超过 20MB</span></div>
         <div id="fileSummary" class="muted small"></div>
