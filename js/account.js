@@ -65,15 +65,17 @@
   }
 
   async function loadDashboard() {
-    profile = await AIClub.profile();
-    catalog = await CourseContent.loadCatalog();
-    allAssignments = CourseContent.assignments(catalog);
     var results = await Promise.all([
+      AIClub.profile(),
+      CourseContent.loadCatalog(),
       AIClub.db("submissions?is_complete=eq.true&select=*&order=created_at.desc", { method: "GET" }),
       AIClub.db("attachments?select=*&order=created_at.asc", { method: "GET" })
     ]);
-    submissions = results[0] || [];
-    attachments = results[1] || [];
+    profile = results[0];
+    catalog = results[1];
+    allAssignments = CourseContent.assignments(catalog);
+    submissions = results[2] || [];
+    attachments = results[3] || [];
     try {
       await removeOlderSubmissions();
     } catch (_) {
