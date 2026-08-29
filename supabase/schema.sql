@@ -117,6 +117,41 @@ $$;
 revoke execute on function public.admin_set_role(uuid, text) from public, anon;
 grant execute on function public.admin_set_role(uuid, text) to authenticated;
 
+-- ---------- 群主专属：删除成员（账号/提交/文件一并删除，不可恢复） ----------
+create or replace function public.admin_delete_member(p_target_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public, storage
+as $$
+declare
+  v_caller_role text;
+  v_target_role text;
+begin
+  select role into v_caller_role from public.profiles where id = auth.uid();
+  if v_caller_role is distinct from 'owner' then
+    raise exception '只有群主可以删除成员';
+  end if;
+
+  select role into v_target_role from public.profiles where id = p_target_user_id;
+  if v_target_role is null then
+    raise exception '目标成员不存在';
+  end if;
+  if v_target_role = 'owner' then
+    raise exception '不能删除群主账号';
+  end if;
+
+  delete from storage.objects
+  where bucket_id = 'homework-private'
+    and name like p_target_user_id::text || '/%';
+
+  delete from auth.users where id = p_target_user_id;
+end;
+$$;
+
+revoke execute on function public.admin_delete_member(uuid) from public, anon;
+grant execute on function public.admin_delete_member(uuid) to authenticated;
+
 -- ---------- 注册与邀请码 ----------
 create or replace function public.validate_invite_code(p_code text)
 returns boolean
