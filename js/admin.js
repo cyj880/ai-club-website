@@ -124,6 +124,7 @@
         manage = student.role === "admin"
           ? '<button class="text-button" type="button" data-set-role="' + esc(student.id) + '|student">移除管理员</button>'
           : '<button class="text-button" type="button" data-set-role="' + esc(student.id) + '|admin">设为管理员</button>';
+        manage += ' <button class="text-button" type="button" style="color:#b91c1c" data-delete-member="' + esc(student.id) + '">删除成员</button>';
       }
       return '<article class="portal-card admin-row"><div><div class="student-name">' + esc(student.full_name) + '</div><div class="student-detail">' + esc(student.email) + '</div></div><div><strong>' + esc(student.student_id) + '</strong><div class="student-detail">' + esc(student.major_class) + " · QQ " + esc(student.qq) + '</div></div><div>' + roleBadge(student.role) + '<div class="student-detail" style="margin-top:6px"><span class="chip">' + esc(student.cohort_label) + '</span></div></div><div><strong>' + taskCount + '</strong> 个任务 / ' + own.length + " 个当前提交" + (manage ? '<div style="margin-top:8px">' + manage + "</div>" : "") + "</div></article>";
     }).join("") : '<div class="empty">暂无新生账号。</div>';
@@ -187,6 +188,20 @@
         try {
           await AIClub.rpc("admin_set_role", { p_target_user_id: targetId, p_new_role: newRole });
           showNotice("已" + actionText + "：" + member.full_name, "success");
+          await loadData();
+        } catch (err) { showNotice(AIClub.friendlyError(err), "error"); }
+      }
+    }
+    var deleteMember = event.target.closest("[data-delete-member]");
+    if (deleteMember) {
+      var delId = deleteMember.dataset.deleteMember;
+      var delMember = profileFor(delId);
+      if (delMember
+        && confirm("确认删除成员「" + delMember.full_name + "」吗？\n\n其账号、资料、全部作业提交和上传文件将被永久删除，不可恢复！")
+        && confirm("最后确认：真的要删除 " + delMember.email + " 吗？此操作无法撤销。")) {
+        try {
+          await AIClub.rpc("admin_delete_member", { p_target_user_id: delId });
+          showNotice("已删除成员：" + delMember.full_name, "success");
           await loadData();
         } catch (err) { showNotice(AIClub.friendlyError(err), "error"); }
       }
