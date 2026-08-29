@@ -5,7 +5,7 @@
  * 版本号由 deploy.py 在每次部署时自动替换为构建时间戳，
  * 新版本 install 时预缓存全部资源、activate 时清掉旧缓存。
  */
-var VERSION = "v1787920219";
+var VERSION = "v1787964530";
 var CACHE = "ai-club-" + VERSION;
 
 var PRECACHE = [
